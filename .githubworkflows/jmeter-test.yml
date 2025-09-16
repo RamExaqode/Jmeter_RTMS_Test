@@ -1,31 +1,40 @@
-name: JMeter Test
+name: JMeter Load Test
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  jmeter:
+  jmeter-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
+    - name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: 11
 
-      - name: Download JMeter
-        run: |
-          curl -L https://downloads.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz -o jmeter.tgz
-          tar -xvzf jmeter.tgz
-          echo "$GITHUB_WORKSPACE/apache-jmeter-5.6.3/bin" >> $GITHUB_PATH
+    - name: Install JMeter
+      run: |
+        wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.7.1.tgz
+        tar -xzf apache-jmeter-5.7.1.tgz
+        export PATH=$PATH:$PWD/apache-jmeter-5.7.1/bin
+        jmeter -v
 
-      - name: Run JMeter Test
-        run: |
-          jmeter -n -t DeepFakeAPILoad.jmx -l results.jtl -e -o report
+    - name: List files for debug
+      run: ls -R
+
+    - name: Run JMeter Test
+      run: jmeter -n -t PerfTesting/deepfake_ws_test.jmx -l results.jtl -e -o report
+
+    - name: Upload JMeter Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: jmeter-report
+        path: report
